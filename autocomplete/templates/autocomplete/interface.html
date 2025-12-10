@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tausug Language AI Assistant</title>
+    <link rel="stylesheet" href="{% static 'autocomplete/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🤖 Bahasa Sug Language Model</h1>
+                <p class="subtitle">Next-word prediction </p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">⚙️ Model Selection</h3>
+                    
+                    <div class="model-selector-container">
+                        <label class="form-label">Choose Model:</label>
+                        <select id="model-selector" class="model-selector">
+                            <option value="lstm">LSTM Neural Network</option>
+                            <option value="bidirectional">Bidirectional LSTM</option>
+                        </select>
+                    </div>
+                    
+                    <div class="model-badge" id="model-info">
+                        <span class="badge-icon">🧠</span>
+                        <span class="badge-text" id="model-name">Long Short-Term Memory (LSTM) Neural Network</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">📖 How to Use</h3>
+                    <div class="instructions">
+                        <div class="instruction-item">
+                            <span class="instruction-number">1</span>
+                            <p>Type Tausug text in the editor</p>
+                        </div>
+                        <div class="instruction-item">
+                            <span class="instruction-number">2</span>
+                            <p>See AI predictions appear inline</p>
+                        </div>
+                        <div class="instruction-item">
+                            <span class="instruction-number">3</span>
+                            <p>Click suggestions to insert</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">🎯 Active Features</h3>
+                    
+                    <div class="feature-badge" style="margin-bottom: 12px;">
+                        <div class="badge-icon">✍️</div>
+                        <div class="badge-content">
+                            <div class="badge-title">Autocomplete</div>
+                            <div class="badge-description">Completes the current word you're typing (inline gray text)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-badge">
+                        <div class="badge-icon">🔮</div>
+                        <div class="badge-content">
+                            <div class="badge-title">Next-Word Prediction</div>
+                            <div class="badge-description">Shows top 3 next words (colored buttons below)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-comparison">
+                        <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #4a5568;">Example:</h4>
+                        <div style="font-size: 13px; color: #4a5568; line-height: 1.8;">
+                            <div style="margin-bottom: 8px;">
+                                <strong>You type:</strong> "mags..."<br>
+                                <span style="color: #888; font-style: italic;">→ Autocomplete: shows "magsusulat" in gray</span>
+                            </div>
+                            <div>
+                                <strong>After typing:</strong> "magsusulat "<br>
+                                <span style="color: #667eea; font-style: italic;">→ Prediction: shows [sin] [ha] [dayn] buttons</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Editor Area -->
+            <div class="editor-container">
+                <div class="editor-header">
+                    <div class="editor-title">
+                        <span class="editor-icon">✍️</span>
+                        <span>Text Editor</span>
+                    </div>
+                    <div class="context-indicator">
+                        <span class="context-label">Context Window:</span>
+                        <span class="context-value">Last 8 words</span>
+                    </div>
+                </div>
+
+                <div class="editor-wrapper">
+                    <form id="doc-form">{% csrf_token %}
+                        <div class="textarea-container">
+                            <!-- Autocomplete inline suggestion -->
+                            <div id="autocomplete-inline" class="autocomplete-inline"></div>
+                            
+                            <textarea 
+                                id="document" 
+                                name="document" 
+                                class="main-textarea"
+                                placeholder="Start typing in Tausug... You'll see autocomplete (gray inline text) and next-word predictions (colored buttons) simultaneously."
+                                spellcheck="false"
+                            >{{ completed_text }}</textarea>
+                        </div>
+                        
+                        <!-- Next-word prediction buttons (moved outside textarea container for better visibility) -->
+                        <div id="prediction-overlay" class="prediction-overlay" style="display: none;">
+                            <div class="prediction-header">🔮 Next Word Suggestions:</div>
+                            <div id="select-pred" class="prediction-suggestions"></div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="editor-footer">
+                    <div class="footer-stats">
+                        <span id="word-count">Words: 0</span>
+                        <span class="separator">•</span>
+                        <span id="prediction-status">Ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'autocomplete/generate.js' %}?v=2.0"></script>
+</body>
+</html>
