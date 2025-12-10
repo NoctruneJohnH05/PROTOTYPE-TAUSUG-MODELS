@@ -749,3 +749,203 @@ def get_top_3_preds_gru(prompt, sp="autocomplete/gru_spm.model", model_path="aut
     text = " ".join(corrected[:max_generate])
     
     return text
+
+
+# ==================== TEXT GENERATION FUNCTIONS ====================
+def generate_text_lstm(prompt, sp="autocomplete/tausug_spm.model", model_path="autocomplete/LSTM-TESTING.keras", 
+                       max_len=MAX_LEN, num_words=20, temperature=1.0):
+    """
+    Generate continuous text using LSTM model with temperature sampling.
+    
+    Args:
+        prompt: Input text to start generation
+        sp: SentencePiece model path
+        model_path: LSTM model checkpoint path
+        max_len: Maximum sequence length
+        num_words: Number of words to generate
+        temperature: Sampling temperature (higher = more random, lower = more deterministic)
+    
+    Returns:
+        Generated text string
+    """
+    model = model_cache.get_model('lstm', model_path)
+    
+    if isinstance(sp, str):
+        sp_proc = model_cache.get_sp_processor(sp)
+    else:
+        sp_proc = sp
+    
+    input_tokens = sp_proc.encode(prompt)
+    encoder_input = pad_sequences([input_tokens], maxlen=max_len, padding="post")
+    seq = [START_TOKEN_ID] + input_tokens
+    
+    generated_tokens = []
+    
+    for _ in range(num_words):
+        decoder_input = np.array([seq])
+        preds = model.predict([encoder_input, decoder_input], verbose=0)
+        probs = preds[0, -1, :].copy()
+        
+        # Filter special tokens
+        probs = filter_special_tokens(probs)
+        
+        # Apply temperature scaling
+        if temperature != 1.0:
+            probs = np.log(probs + 1e-10) / temperature
+            probs = np.exp(probs)
+            probs = probs / np.sum(probs)
+        
+        # Sample from distribution
+        next_token = np.random.choice(len(probs), p=probs)
+        
+        # Stop if we generate END token
+        if next_token == END_TOKEN_ID:
+            break
+        
+        generated_tokens.append(int(next_token))
+        seq.append(int(next_token))
+    
+    # Decode generated tokens
+    if generated_tokens:
+        text = sp_proc.decode(generated_tokens)
+        # Apply vocabulary correction
+        words = text.strip().split()
+        corrected = correct_predictions_with_vocab(words, sp_proc)
+        return " ".join(corrected)
+    
+    return ""
+
+
+def generate_text_bidirectional(prompt, sp="autocomplete/tausug_spm.model", 
+                                 model_path="autocomplete/BIDIRECTIONAL-FINETUNED2.keras", 
+                                 max_len=MAX_LEN, num_words=20, temperature=1.0):
+    """
+    Generate continuous text using Bidirectional LSTM model with temperature sampling.
+    
+    Args:
+        prompt: Input text to start generation
+        sp: SentencePiece model path
+        model_path: Bidirectional model checkpoint path
+        max_len: Maximum sequence length
+        num_words: Number of words to generate
+        temperature: Sampling temperature (higher = more random, lower = more deterministic)
+    
+    Returns:
+        Generated text string
+    """
+    model = model_cache.get_model('bidirectional', model_path)
+    
+    if isinstance(sp, str):
+        sp_proc = model_cache.get_sp_processor(sp)
+    else:
+        sp_proc = sp
+    
+    input_tokens = sp_proc.encode(prompt)
+    encoder_input = pad_sequences([input_tokens], maxlen=max_len, padding="post")
+    seq = [START_TOKEN_ID] + input_tokens
+    
+    generated_tokens = []
+    
+    for _ in range(num_words):
+        decoder_input = np.array([seq])
+        preds = model.predict([encoder_input, decoder_input], verbose=0)
+        probs = preds[0, -1, :].copy()
+        
+        # Filter special tokens
+        probs = filter_special_tokens(probs)
+        
+        # Apply temperature scaling
+        if temperature != 1.0:
+            probs = np.log(probs + 1e-10) / temperature
+            probs = np.exp(probs)
+            probs = probs / np.sum(probs)
+        
+        # Sample from distribution
+        next_token = np.random.choice(len(probs), p=probs)
+        
+        # Stop if we generate END token
+        if next_token == END_TOKEN_ID:
+            break
+        
+        generated_tokens.append(int(next_token))
+        seq.append(int(next_token))
+    
+    # Decode generated tokens
+    if generated_tokens:
+        text = sp_proc.decode(generated_tokens)
+        # Apply vocabulary correction
+        words = text.strip().split()
+        corrected = correct_predictions_with_vocab(words, sp_proc)
+        return " ".join(corrected)
+    
+    return ""
+
+
+def generate_text_gru(prompt, sp="autocomplete/gru_spm.model", model_path="autocomplete/GRU.pt", 
+                      num_words=20, temperature=1.0):
+    """
+    Generate continuous text using PyTorch GRU model with temperature sampling.
+    
+    Args:
+        prompt: Input text to start generation
+        sp: SentencePiece model path
+        model_path: GRU model checkpoint path
+        num_words: Number of words to generate
+        temperature: Sampling temperature (higher = more random, lower = more deterministic)
+    
+    Returns:
+        Generated text string
+    """
+    model, config = model_cache.get_model('gru', model_path)
+    
+    if isinstance(sp, str):
+        sp_proc = model_cache.get_sp_processor(sp)
+    else:
+        sp_proc = sp
+    
+    # Encode input text
+    input_tokens = sp_proc.encode(prompt.lower().strip())
+    vocab_size = config['vocab_size']
+    input_tokens = [min(t, vocab_size - 1) for t in input_tokens]
+    
+    if not input_tokens:
+        input_tokens = [0]
+    
+    generated_tokens = []
+    current_seq = input_tokens.copy()
+    
+    for _ in range(num_words):
+        input_tensor = torch.tensor([current_seq], dtype=torch.long)
+        
+        with torch.no_grad():
+            logits = model(input_tensor)
+            last_logits = logits[0, -1, :]
+            
+            # Apply temperature
+            if temperature != 1.0:
+                last_logits = last_logits / temperature
+            
+            probs = torch.softmax(last_logits, dim=-1).numpy()
+            
+            # Filter special tokens
+            probs = filter_special_tokens(probs)
+            
+            # Sample from distribution
+            next_token = np.random.choice(len(probs), p=probs)
+            
+            # Stop if we generate END token
+            if next_token == END_TOKEN_ID:
+                break
+            
+            generated_tokens.append(int(next_token))
+            current_seq.append(int(next_token))
+    
+    # Decode generated tokens
+    if generated_tokens:
+        text = sp_proc.decode(generated_tokens)
+        # Apply vocabulary correction
+        words = text.strip().split()
+        corrected = correct_predictions_with_vocab(words, sp_proc)
+        return " ".join(corrected)
+    
+    return ""

@@ -8,6 +8,25 @@ const predictionStatusElem = document.getElementById("prediction-status")
 const modelSelector = document.getElementById("model-selector")
 const modelNameElem = document.getElementById("model-name")
 
+// New elements for generation mode
+const modeSelector = document.getElementById("mode-selector")
+const generationControls = document.getElementById("generation-controls")
+const lengthSlider = document.getElementById("length-slider")
+const lengthValue = document.getElementById("length-value")
+const tempSlider = document.getElementById("temp-slider")
+const tempValue = document.getElementById("temp-value")
+const generateBtn = document.getElementById("generate-btn")
+const generatedOverlay = document.getElementById("generated-overlay")
+const generatedText = document.getElementById("generated-text")
+const insertGeneratedBtn = document.getElementById("insert-generated")
+
+// Feature visibility elements
+const predictFeature = document.getElementById("predict-feature")
+const predictFeature2 = document.getElementById("predict-feature-2")
+const generateFeature = document.getElementById("generate-feature")
+const predictExample = document.getElementById("predict-example")
+const generateExample = document.getElementById("generate-example")
+
 // Debug: Verify model selector is found
 console.log("%c[INIT] Model Selector Element:", "color: orange; font-weight: bold", modelSelector);
 console.log("%c[INIT] Initial Model Value:", "color: orange; font-weight: bold", modelSelector ? modelSelector.value : "NOT FOUND");
@@ -111,6 +130,11 @@ function updateAutocompleteDisplay(suggestion) {
 // Text input event listener - BOTH features work simultaneously
 textArea.addEventListener("input", async (e) => {
     updateWordCount();
+    
+    // Check if we're in generation mode - if so, skip prediction
+    if (modeSelector.value === "generate") {
+        return;
+    }
     
     // Clear previous timer
     clearTimeout(typingTimer);
@@ -350,3 +374,131 @@ modelSelector.addEventListener("change", (e) => {
 docForm.addEventListener("submit", (e) => {
     e.preventDefault();
 });
+
+// ==================== GENERATION MODE HANDLERS ====================
+
+// Mode selector change handler
+modeSelector.addEventListener("change", (e) => {
+    const mode = e.target.value;
+    console.log(`%c[MODE SWITCH] Changed to: ${mode.toUpperCase()}`, 'background: #764ba2; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold');
+    
+    if (mode === "generate") {
+        // Show generation controls
+        generationControls.style.display = "block";
+        generateFeature.style.display = "flex";
+        generateExample.style.display = "block";
+        
+        // Hide prediction features
+        predictFeature.style.display = "none";
+        predictFeature2.style.display = "none";
+        predictExample.style.display = "none";
+        predictionOverlay.style.display = "none";
+        autocompleteInline.style.display = "none";
+        
+        predictionStatusElem.textContent = "Generation Mode Active";
+        predictionStatusElem.style.color = "#764ba2";
+    } else {
+        // Show prediction features
+        generationControls.style.display = "none";
+        generateFeature.style.display = "none";
+        generateExample.style.display = "none";
+        generatedOverlay.style.display = "none";
+        
+        // Show prediction features
+        predictFeature.style.display = "flex";
+        predictFeature2.style.display = "flex";
+        predictExample.style.display = "block";
+        
+        predictionStatusElem.textContent = "Prediction Mode Active";
+        predictionStatusElem.style.color = "#667eea";
+    }
+});
+
+// Slider updates
+lengthSlider.addEventListener("input", (e) => {
+    lengthValue.textContent = e.target.value;
+});
+
+tempSlider.addEventListener("input", (e) => {
+    tempValue.textContent = parseFloat(e.target.value).toFixed(1);
+});
+
+// Generate button handler
+generateBtn.addEventListener("click", async () => {
+    const text = textArea.value.trim();
+    
+    if (!text) {
+        alert("Please enter some text as a prompt for generation!");
+        return;
+    }
+    
+    const selectedModel = modelSelector.value;
+    const numWords = parseInt(lengthSlider.value);
+    const temperature = parseFloat(tempSlider.value);
+    
+    // Show loading state
+    generateBtn.disabled = true;
+    generateBtn.textContent = "⏳ Generating...";
+    predictionStatusElem.textContent = "🤖 AI generating text...";
+    predictionStatusElem.style.color = "#f59e0b";
+    
+    try {
+        console.log(`%c[GENERATION] Model: ${selectedModel.toUpperCase()}, Words: ${numWords}, Temp: ${temperature}`, 'color: #764ba2; font-weight: bold');
+        
+        const response = await fetch("http://127.0.0.1:8000/generate/", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                data: text,
+                model: selectedModel,
+                num_words: numWords,
+                temperature: temperature
+            }),
+            mode: 'same-origin'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        console.log(`%c[GENERATION SUCCESS]`, 'color: #10b981; font-weight: bold');
+        console.log(`Generated: ${data.generated_text}`);
+        
+        // Display generated text
+        generatedText.textContent = data.generated_text;
+        generatedOverlay.style.display = "block";
+        
+        predictionStatusElem.textContent = "✨ Generation Complete!";
+        predictionStatusElem.style.color = "#10b981";
+        
+    } catch (error) {
+        console.error("Generation error:", error);
+        predictionStatusElem.textContent = "❌ Generation failed";
+        predictionStatusElem.style.color = "#ef4444";
+        alert("Failed to generate text. Please try again.");
+    } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = "✨ Generate Text";
+    }
+});
+
+// Insert generated text into editor
+insertGeneratedBtn.addEventListener("click", () => {
+    const generated = generatedText.textContent;
+    if (generated) {
+        // Append to textarea with a space
+        textArea.value += " " + generated;
+        updateWordCount();
+        generatedOverlay.style.display = "none";
+        predictionStatusElem.textContent = "✅ Text inserted!";
+        setTimeout(() => {
+            predictionStatusElem.textContent = "Ready";
+        }, 2000);
+    }
+});
+
