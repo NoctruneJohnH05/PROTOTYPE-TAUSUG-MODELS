@@ -252,6 +252,8 @@ modelSelector.addEventListener("change", (e) => {
     
     if (selectedModel === "bidirectional") {
         modelNameElem.textContent = "Bidirectional LSTM Neural Network";
+    } else if (selectedModel === "gru") {
+        modelNameElem.textContent = "Gated Recurrent Unit (GRU) - PyTorch";
     } else {
         modelNameElem.textContent = "Long Short-Term Memory (LSTM) Neural Network";
     }
