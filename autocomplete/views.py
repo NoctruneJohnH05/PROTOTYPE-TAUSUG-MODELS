@@ -1,7 +1,7 @@
 from django.template import loader
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, JsonResponse
-from .utils import get_top_3_preds, get_top_3_preds_bidirectional
+from .utils import get_top_3_preds, get_top_3_preds_bidirectional, get_top_3_preds_gru
 import json
 
 
@@ -30,6 +30,13 @@ def render_doc_editor(request):
                 model_path="autocomplete/BIDIRECTIONAL-FINETUNED2.keras"
             )
             print(f"Bidirectional Model Predictions: {top_3_preds}")
+        elif model_type == "gru":
+            print("Loading GRU.pt (PyTorch)...")
+            top_3_preds = get_top_3_preds_gru(
+                prompt=input_text,
+                model_path="autocomplete/GRU.pt"
+            )
+            print(f"GRU Model Predictions: {top_3_preds}")
         else:  # LSTM
             print("Loading LSTM-TESTING.keras...")
             top_3_preds = get_top_3_preds(
