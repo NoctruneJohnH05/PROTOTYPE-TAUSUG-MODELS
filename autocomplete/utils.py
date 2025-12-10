@@ -14,6 +14,101 @@ MAX_LEN = 426
 PAD_TOKEN = 0
 
 
+# ==================== Model Cache Singleton ====================
+class ModelCache:
+    """
+    Singleton class to cache loaded models and SentencePiece processors
+    to avoid repeated file I/O and model loading on each request.
+    """
+    _instance = None
+    _models = {}
+    _sp_processors = {}
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ModelCache, cls).__new__(cls)
+        return cls._instance
+    
+    def get_model(self, model_type, model_path):
+        """
+        Get a cached model or load it if not cached.
+        
+        Args:
+            model_type: Type of model ('lstm', 'bidirectional', 'gru')
+            model_path: Path to the model file
+        
+        Returns:
+            Loaded model (and config for GRU models)
+        """
+        cache_key = f"{model_type}:{model_path}"
+        
+        if cache_key not in self._models:
+            print(f"[MODEL CACHE] Loading {model_type} model for the first time: {model_path}")
+            
+            if model_type == 'gru':
+                model, config = load_gru_model(model_path)
+                self._models[cache_key] = (model, config)
+            else:
+                model = load_rrn_model(model_path)
+                self._models[cache_key] = model
+            
+            print(f"[MODEL CACHE] {model_type} model cached successfully")
+        else:
+            print(f"[MODEL CACHE] Using cached {model_type} model")
+        
+        return self._models[cache_key]
+    
+    def get_sp_processor(self, sp_path):
+        """
+        Get a cached SentencePiece processor or load it if not cached.
+        
+        Args:
+            sp_path: Path to the SentencePiece model file
+        
+        Returns:
+            Loaded SentencePiece processor
+        """
+        if sp_path not in self._sp_processors:
+            print(f"[SP CACHE] Loading SentencePiece model for the first time: {sp_path}")
+            self._sp_processors[sp_path] = load_spm_model(sp_path)
+            print(f"[SP CACHE] SentencePiece model cached successfully")
+        else:
+            print(f"[SP CACHE] Using cached SentencePiece processor")
+        
+        return self._sp_processors[sp_path]
+    
+    def preload_all_models(self):
+        """
+        Preload all models on server startup for faster first requests.
+        """
+        print("\n" + "="*60)
+        print("PRELOADING ALL MODELS INTO MEMORY...")
+        print("="*60)
+        
+        try:
+            # Preload LSTM model
+            self.get_model('lstm', 'autocomplete/LSTM-TESTING.keras')
+            self.get_sp_processor('autocomplete/tausug_spm.model')
+            
+            # Preload Bidirectional model
+            self.get_model('bidirectional', 'autocomplete/BIDIRECTIONAL-FINETUNED2.keras')
+            
+            # Preload GRU model
+            self.get_model('gru', 'autocomplete/GRU.pt')
+            self.get_sp_processor('autocomplete/gru_spm.model')
+            
+            print("="*60)
+            print("ALL MODELS PRELOADED SUCCESSFULLY!")
+            print("="*60 + "\n")
+        except Exception as e:
+            print(f"[WARNING] Error preloading models: {e}")
+            print("Models will be loaded on first request instead.\n")
+
+
+# Global singleton instance
+model_cache = ModelCache()
+
+
 # ==================== Keras/TensorFlow Functions ====================
 @register_keras_serializable(package="Custom", name="masked_loss")
 def masked_loss(y_true, y_pred):
@@ -280,10 +375,11 @@ def get_top_3_preds(prompt, sp="autocomplete/tausug_spm.model", model_path="auto
         max_len: Maximum sequence length
         max_generate: Number of predictions
     """
-    model = load_rrn_model(model_path)
+    # Use cached model instead of loading every time
+    model = model_cache.get_model('lstm', model_path)
     
     if isinstance(sp, str):
-        sp_proc = load_spm_model(sp)
+        sp_proc = model_cache.get_sp_processor(sp)
     else:
         sp_proc = sp 
 
@@ -323,10 +419,11 @@ def get_top_3_preds_bidirectional(prompt, sp="autocomplete/tausug_spm.model", mo
         max_len: Maximum sequence length
         max_generate: Number of predictions
     """
-    model = load_rrn_model(model_path)
+    # Use cached model instead of loading every time
+    model = model_cache.get_model('bidirectional', model_path)
     
     if isinstance(sp, str):
-        sp_proc = load_spm_model(sp)
+        sp_proc = model_cache.get_sp_processor(sp)
     else:
         sp_proc = sp 
 
@@ -365,11 +462,11 @@ def get_top_3_preds_gru(prompt, sp="autocomplete/gru_spm.model", model_path="aut
         model_path: GRU model checkpoint path
         max_generate: Number of predictions
     """
-    # Load model
-    model, config = load_gru_model(model_path)
+    # Use cached model instead of loading every time
+    model, config = model_cache.get_model('gru', model_path)
     
     if isinstance(sp, str):
-        sp_proc = load_spm_model(sp)
+        sp_proc = model_cache.get_sp_processor(sp)
     else:
         sp_proc = sp
     
