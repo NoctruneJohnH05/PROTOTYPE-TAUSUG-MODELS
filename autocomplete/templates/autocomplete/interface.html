@@ -14,8 +14,8 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1 class="title">🤖 Bahasa Sug Language Model</h1>
-                <p class="subtitle">Next-word prediction </p>
+                <h1 class="title">⛵Bahasa Sug Language Model🌊</h1>
+                <p class="subtitle">Next-word prediction & Text generation</p>
             </div>
         </header>
 
@@ -42,6 +42,39 @@
                 </div>
 
                 <div class="sidebar-section">
+                    <h3 class="sidebar-title">🎨 Mode Selection</h3>
+                    
+                    <div class="model-selector-container">
+                        <label class="form-label">Operation Mode:</label>
+                        <select id="mode-selector" class="model-selector">
+                            <option value="predict">Prediction Mode</option>
+                            <option value="generate">Generation Mode</option>
+                        </select>
+                    </div>
+                    
+                    <div id="generation-controls" style="display: none; margin-top: 15px;">
+                        <div style="margin-bottom: 12px;">
+                            <label class="form-label">Length (words): <span id="length-value">20</span></label>
+                            <input type="range" id="length-slider" min="5" max="50" value="20" step="5" 
+                                   style="width: 100%; cursor: pointer;">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Creativity: <span id="temp-value">1.0</span></label>
+                            <input type="range" id="temp-slider" min="0.5" max="1.5" value="1.0" step="0.1" 
+                                   style="width: 100%; cursor: pointer;">
+                            <div style="font-size: 11px; color: #888; margin-top: 4px;">
+                                Lower = focused, Higher = creative
+                            </div>
+                        </div>
+                        
+                        <button id="generate-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                            ✨ Generate Text
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
                     <h3 class="sidebar-title">📖 How to Use</h3>
                     <div class="instructions">
                         <div class="instruction-item">
@@ -62,7 +95,7 @@
                 <div class="sidebar-section">
                     <h3 class="sidebar-title">🎯 Active Features</h3>
                     
-                    <div class="feature-badge" style="margin-bottom: 12px;">
+                    <div class="feature-badge" id="predict-feature" style="margin-bottom: 12px;">
                         <div class="badge-icon">✍️</div>
                         <div class="badge-content">
                             <div class="badge-title">Autocomplete</div>
@@ -70,7 +103,7 @@
                         </div>
                     </div>
                     
-                    <div class="feature-badge">
+                    <div class="feature-badge" id="predict-feature-2">
                         <div class="badge-icon">🔮</div>
                         <div class="badge-content">
                             <div class="badge-title">Next-Word Prediction</div>
@@ -78,7 +111,15 @@
                         </div>
                     </div>
                     
-                    <div class="feature-comparison">
+                    <div class="feature-badge" id="generate-feature" style="margin-bottom: 12px; display: none;">
+                        <div class="badge-icon">✨</div>
+                        <div class="badge-content">
+                            <div class="badge-title">Text Generation</div>
+                            <div class="badge-description">Generate continuous text from your prompt</div>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-comparison" id="predict-example">
                         <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #4a5568;">Example:</h4>
                         <div style="font-size: 13px; color: #4a5568; line-height: 1.8;">
                             <div style="margin-bottom: 8px;">
@@ -88,6 +129,16 @@
                             <div>
                                 <strong>After typing:</strong> "magsusulat "<br>
                                 <span style="color: #667eea; font-style: italic;">→ Prediction: shows [sin] [ha] [dayn] buttons</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-comparison" id="generate-example" style="display: none;">
+                        <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #4a5568;">Example:</h4>
+                        <div style="font-size: 13px; color: #4a5568; line-height: 1.8;">
+                            <div style="margin-bottom: 8px;">
+                                <strong>You type:</strong> "In bulawan niya"<br>
+                                <span style="color: #667eea; font-style: italic;">→ AI generates: "awn ha bāy niya iban in manga tau..."</span>
                             </div>
                         </div>
                     </div>
@@ -126,6 +177,15 @@
                         <div id="prediction-overlay" class="prediction-overlay" style="display: none;">
                             <div class="prediction-header">🔮 Next Word Suggestions:</div>
                             <div id="select-pred" class="prediction-suggestions"></div>
+                        </div>
+                        
+                        <!-- Generated text display -->
+                        <div id="generated-overlay" class="prediction-overlay" style="display: none; background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border: 2px solid #667eea;">
+                            <div class="prediction-header">✨ Generated Text:</div>
+                            <div id="generated-text" style="padding: 12px; background: white; border-radius: 8px; margin-top: 8px; font-size: 15px; line-height: 1.6; color: #2d3748;"></div>
+                            <button id="insert-generated" style="width: 100%; margin-top: 10px; padding: 8px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                                📝 Insert into Editor
+                            </button>
                         </div>
                     </form>
                 </div>
