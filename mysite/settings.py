@@ -35,25 +35,29 @@ ALLOWED_HOSTS = [
 ]
 
 # CRITICAL: Allow Render domain
-ALLOWED_HOSTS = ['*']  # Or ['prototype-tausug-models.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
+
+# CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = ['https://prototype-tausug-models.onrender.com']
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    "autocomplete.apps.AutocompleteConfig",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',  # REQUIRED for API calls
-    'autocomplete',
+    'corsheaders',  # CORS must be here
+    'autocomplete',  # ✅ Only ONE instance - remove any duplicates
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # MUST be first
+    'corsheaders.middleware.CorsMiddleware',  # Must be first
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # For static files on Render
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -145,15 +149,3 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # WhiteNoise configuration
 WHITENOISE_MAX_AGE = 31536000  # 1 year cache
 WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['keras', 'pt', 'model', 'h5', 'bin']  # Don't compress models
-
-# Add CORS settings
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    'https://prototype-tausug-models.onrender.com',
-]
-
-# CSRF Configuration for Render
-CSRF_TRUSTED_ORIGINS = [
-    'https://prototype-tausug-models.onrender.com',
-]

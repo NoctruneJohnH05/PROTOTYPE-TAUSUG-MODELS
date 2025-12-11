@@ -15,5 +15,15 @@ python manage.py migrate
 
 echo "Build completed successfully!"
 
-# Start with increased timeout for model loading
-gunicorn mysite.wsgi:application --timeout 120 --workers 1 --bind 0.0.0.0:$PORT
+# Optimized for 512MB RAM
+# - Single worker (multiple workers = multiple model copies)
+# - Increased timeout for first model load
+# - Max requests forces worker restart to clear memory leaks
+gunicorn mysite.wsgi:application \
+    --bind 0.0.0.0:$PORT \
+    --workers 1 \
+    --timeout 120 \
+    --max-requests 100 \
+    --max-requests-jitter 10 \
+    --worker-class sync \
+    --log-level info

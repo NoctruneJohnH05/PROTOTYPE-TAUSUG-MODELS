@@ -1,35 +1,29 @@
 from django.apps import AppConfig
+import os
 
 
 class AutocompleteConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
     name = 'autocomplete'
     
     def ready(self):
         """
-        Called once at Django startup.
-        Preloads vocabulary and processors.
+        Preloads vocabulary and processors only.
         Models load on-demand to save memory.
         """
-        # Import here to avoid AppRegistryNotReady error
-        from .utils import model_cache
+        if os.environ.get('RUN_MAIN') != 'true':
+            return
         
-        # Preload all models on server startup
-        try:
-            model_cache.preload_all_models()
-        except Exception as e:
-            print(f"[WARNING] Failed to preload models on startup: {e}")
-            print("Models will be loaded on first request instead.")
+        from .ml_models import preload_vocab_and_processors
         
         print("\n" + "=" * 60)
-        print("VOCABULARY AND PROCESSORS LOADED!")
-        print("Preloading lightweight model to avoid timeouts...")
-        print("=" * 60 + "\n")
+        print("PRELOADING ESSENTIAL RESOURCES...")
+        print("=" * 60)
         
-        # Preload the smallest model to avoid first-request timeout
-        try:
-            from .ml_models import load_lstm_model
-            load_lstm_model()  # This is typically the smallest/fastest
-            print("✓ LSTM model preloaded successfully\n")
-        except Exception as e:
-            print(f"⚠ Model preload warning: {e}\n")
+        preload_vocab_and_processors()
+        
+        print("=" * 60)
+        print("VOCABULARY AND PROCESSORS LOADED!")
+        print("Models will load on-demand to save memory.")
+        print("=" * 60 + "\n")
 
