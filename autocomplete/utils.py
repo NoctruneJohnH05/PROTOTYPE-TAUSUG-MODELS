@@ -153,29 +153,25 @@ class ModelCache:
     
     def preload_all_models(self):
         """
-        Preload all models on server startup for faster first requests.
+        Preload models on server startup for faster first requests.
+        Note: On free tier (512MB RAM), we only preload vocabulary to avoid memory issues.
+        Models will load on-demand when first requested.
         """
         print("\n" + "="*60)
-        print("PRELOADING ALL MODELS INTO MEMORY...")
+        print("PRELOADING ESSENTIAL RESOURCES...")
         print("="*60)
         
         try:
-            # Preload LSTM model
-            self.get_model('lstm', 'autocomplete/LSTM-TESTING.keras')
-            self.get_sp_processor('autocomplete/tausug_spm.model')
-            
-            # Preload Bidirectional model
-            self.get_model('bidirectional', 'autocomplete/BIDIRECTIONAL-FINETUNED2.keras')
-            
-            # Preload GRU model
-            self.get_model('gru', 'autocomplete/GRU.pt')
-            self.get_sp_processor('autocomplete/gru_spm.model')
-            
-            # Preload vocabulary
+            # Only preload vocabulary (lightweight)
             self.get_vocabulary()
             
+            # Preload SentencePiece processors (lightweight)
+            self.get_sp_processor('autocomplete/tausug_spm.model')
+            self.get_sp_processor('autocomplete/gru_spm.model')
+            
             print("="*60)
-            print("ALL MODELS PRELOADED SUCCESSFULLY!")
+            print("VOCABULARY AND PROCESSORS LOADED!")
+            print("Models will load on-demand to save memory.")
             print("="*60 + "\n")
         except Exception as e:
             print(f"[WARNING] Error preloading models: {e}")
