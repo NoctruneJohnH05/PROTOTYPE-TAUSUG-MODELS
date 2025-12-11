@@ -31,6 +31,13 @@ const generateExample = document.getElementById("generate-example")
 console.log("%c[INIT] Model Selector Element:", "color: orange; font-weight: bold", modelSelector);
 console.log("%c[INIT] Initial Model Value:", "color: orange; font-weight: bold", modelSelector ? modelSelector.value : "NOT FOUND");
 
+// ==================== API CONFIGURATION ====================
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:8000'
+    : window.location.origin; // Uses the same domain as frontend
+
+console.log(`%c[API] Base URL: ${API_BASE_URL}`, 'background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold');
+
 // ==================== OPTIMIZATION: Request Management ====================
 let typingTimer;
 const debounceDelay = 500; // Increased from 300ms to 500ms for better performance
@@ -192,7 +199,7 @@ async function fetchPrediction(cleanedText) {
         console.log(`%c[MODEL] Using: ${selectedModel.toUpperCase()}`, 'color: #667eea; font-weight: bold; font-size: 14px');
         console.log(`[INPUT] Text: "${cleanedText}"`);
         
-        const response = await fetch("http://127.0.0.1:8000/document/", {
+        const response = await fetch(`${API_BASE_URL}/document/`, {
             method: "POST",
             headers: {
                 'X-CSRFToken': csrftoken,
@@ -445,7 +452,7 @@ generateBtn.addEventListener("click", async () => {
     try {
         console.log(`%c[GENERATION] Model: ${selectedModel.toUpperCase()}, Words: ${numWords}, Temp: ${temperature}`, 'color: #764ba2; font-weight: bold');
         
-        const response = await fetch("http://127.0.0.1:8000/generate/", {
+        const response = await fetch(`${API_BASE_URL}/generate/`, {
             method: "POST",
             headers: {
                 'X-CSRFToken': csrftoken,

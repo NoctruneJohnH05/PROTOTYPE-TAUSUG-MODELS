@@ -14,3 +14,6 @@ echo "Running database migrations..."
 python manage.py migrate
 
 echo "Build completed successfully!"
+
+# Start with increased timeout for model loading
+gunicorn mysite.wsgi:application --timeout 120 --workers 1 --bind 0.0.0.0:$PORT
