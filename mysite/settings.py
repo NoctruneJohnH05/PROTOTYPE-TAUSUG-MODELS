@@ -132,3 +132,10 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
+
+# Ignore model files during collectstatic (they're too large and not needed in staticfiles)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# WhiteNoise configuration
+WHITENOISE_MAX_AGE = 31536000  # 1 year cache
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['keras', 'pt', 'model', 'h5', 'bin']  # Don't compress models
